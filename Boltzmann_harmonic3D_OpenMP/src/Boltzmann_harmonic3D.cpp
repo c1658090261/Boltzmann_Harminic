@@ -126,9 +126,9 @@ void LBM::init()
 	Precision w_init[Q]={1.0/2,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24,1.0/24};
 	Precision w_bar_init[Q]={0,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12,1.0/12};
     Kokkos::parallel_for("w_init", Q,
-                       [=](const int i) { w(i) = w_init[i]; });
+                       [&](const int i) { w(i) = w_init[i]; });
     Kokkos::parallel_for("w_bar_init", Q,
-                       [=](const int i) { w_bar(i) = w_bar_init[i]; });
+                       [&](const int i) { w_bar(i) = w_bar_init[i]; });
 	Kokkos::parallel_for(
 	Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {Q, 3}),
 	KOKKOS_LAMBDA(const int i, const int j) {
@@ -297,8 +297,8 @@ void LBM::evolution()
 		const int j = team.league_rank();
 		Kokkos::parallel_for(Kokkos::TeamThreadRange<>(team,  Nz + 1 ), [=](int z)
 			{	
-			//  U[0][j][z]=-3*pi*pi*sin(pi*double(j)/Np)*sin(pi*double(z)/Np);//Dirichlet boundary conditions
-			//  U[NX][j][z]=3*pi*pi*sin(pi*double(j)/Np)*sin(pi*double(z)/Np);//Dirichlet boundary conditions
+			//  U(0,j,z)=-3*pi*pi*sin(pi*double(j)/Np)*sin(pi*double(z)/Np);//Dirichlet boundary conditions
+			//  U(Nx,j,z)=3*pi*pi*sin(pi*double(j)/Np)*sin(pi*double(z)/Np);//Dirichlet boundary conditions
 				U(0,j,z)=U(1,j,z);    //Neumann boundary conditions
 				U(Nx,j,z)=U(Nx-1,j,z);//Neumann boundary conditions
 				Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,Q), [=](int k)
@@ -329,8 +329,8 @@ void LBM::evolution()
 			{
 			//	U(i,Ny,z)=0;//Dirichlet boundary conditions
 			//	U(i,0,z)=0; //Dirichlet boundary conditions
-				U[i][NY][z]=U[i][NY-1][z];//Neumann boundary conditions
-				U[i][0][z]=U[i][1][z];	  //Neumann boundary conditions
+				U(i,Ny,z)=U(i,Ny-1,z);//Neumann boundary conditions
+				U(i,0,z)=U(i,1,z);	  //Neumann boundary conditions
 				Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,Q), [=](int k)
 				{
 					if(k==0)
@@ -359,8 +359,8 @@ void LBM::evolution()
 			{
 			//	U(i,j,0)=0; //Dirichlet boundary conditions
 			//	U(i,j,Nz)=0;//Dirichlet boundary conditions
-				U[i][j][0]=U[i][j][0];    //Neumann boundary conditions
-				U[i][j][NZ]=U[i][j][NZ-1];//Neumann boundary conditions
+				U(i,j,0)=U(i,j,1);    //Neumann boundary conditions
+				U(i,j,Nz)=U(i,j,Nz-1);//Neumann boundary conditions
 				Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,Q), [=](int k)
 				{
 					if(k==0)
